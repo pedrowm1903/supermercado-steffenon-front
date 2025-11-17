@@ -13,10 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import logoSteffenon from "@/assets/logo-steffenon.png";   // <-- IMPORT DO LOGO
+
 const Header = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
-  const { cartCount } = useCart(); // ✅ Usar o carrinho do contexto
+  const { cartCount } = useCart();
 
   const handleLogout = async () => {
     await logout();
@@ -27,11 +29,14 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
+
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <h1 className="text-2xl font-montserrat font-bold text-primary hover:opacity-80 transition-opacity">
-              Supermercado Steffenon
-            </h1>
+            <img 
+              src={logoSteffenon} 
+              alt="Logo Supermercado Steffenon" 
+              className="h-14 w-39 hover:opacity-80 transition-opacity" 
+              />
           </Link>
 
           {/* Search Bar */}
@@ -54,7 +59,6 @@ const Header = () => {
           {/* User Actions */}
           <div className="flex items-center gap-4 flex-shrink-0">
             {isAuthenticated ? (
-              /* USUÁRIO LOGADO */
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -65,21 +69,18 @@ const Header = () => {
                     <span>Olá, <strong>{user?.name}</strong></span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 bg-white border-2 border-gray-200 shadow-xl"
-                >
+
+                <DropdownMenuContent align="end" className="w-56 bg-white border-2 border-gray-200 shadow-xl">
                   <DropdownMenuLabel className="text-gray-900 font-semibold">
                     Minha Conta
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-gray-200" />
-                  
-                  {/* Admin Panel - Só aparece se for admin */}
+
                   {isAdmin && (
                     <>
                       <DropdownMenuItem 
                         onClick={() => navigate('/admin')}
-                        className="cursor-pointer text-gray-700 hover:bg-[#004C97] hover:text-white focus:bg-[#004C97] focus:text-white transition-colors"
+                        className="cursor-pointer text-gray-700 hover:bg-[#004C97] hover:text-white transition-colors"
                       >
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Painel Admin</span>
@@ -87,22 +88,20 @@ const Header = () => {
                       <DropdownMenuSeparator className="bg-gray-200" />
                     </>
                   )}
-                  
-                  {/* Meus Pedidos */}
+
                   <DropdownMenuItem 
                     onClick={() => navigate('/pedidos')}
-                    className="cursor-pointer text-gray-700 hover:bg-[#FF8C42] hover:text-white focus:bg-[#FF8C42] focus:text-white transition-colors"
+                    className="cursor-pointer text-gray-700 hover:bg-[#FF8C42] hover:text-white transition-colors"
                   >
                     <Package className="mr-2 h-4 w-4" />
                     <span>Meus Pedidos</span>
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuSeparator className="bg-gray-200" />
-                  
-                  {/* Logout */}
+
                   <DropdownMenuItem 
                     onClick={handleLogout}
-                    className="cursor-pointer text-red-600 hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white transition-colors font-medium"
+                    className="cursor-pointer text-red-600 hover:bg-red-600 hover:text-white transition-colors"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sair</span>
@@ -110,7 +109,6 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              /* USUÁRIO NÃO LOGADO */
               <Button 
                 variant="ghost" 
                 className="text-sm text-foreground hover:text-primary"
@@ -120,7 +118,7 @@ const Header = () => {
                 Olá, faça seu login ou cadastre-se
               </Button>
             )}
-            
+
             {/* Carrinho */}
             <Button 
               variant="ghost" 

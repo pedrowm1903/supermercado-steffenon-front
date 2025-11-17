@@ -1,36 +1,30 @@
-import { useEffect, useState } from 'react';
-import { getProducts } from '../services/api';
-import ProductCard from './ProductCard';
+
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ProductCard from '@/components/ProductCard';
+import * as api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 interface Product {
   id: number;
   name: string;
+  description: string;
   price: number;
-  image?: string;
-  description?: string;
-  discount?: number;
-  originalPrice?: number;
+  image_url?: string;
 }
 
 interface ProductListProps {
-  title?: string;
-  maxItems?: number;
+  title: string;
   showNavigation?: boolean;
+  maxItems?: number;
 }
 
-export default function ProductList({ 
-  title = "Produtos mais vendidos", 
-  maxItems,
-  showNavigation = true 
-}: ProductListProps) {
+const ProductList = ({ title, showNavigation = true, maxItems }: ProductListProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-
-  const itemsPerPage = 4;
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     loadProducts();
@@ -39,157 +33,128 @@ export default function ProductList({
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await getProducts();
-      
-      // Limitar produtos se maxItems foi especificado
-      const productsToShow = maxItems ? data.slice(0, maxItems) : data;
-      setProducts(productsToShow);
       setError(null);
-    } catch (err) {
+      const data = await api.getProducts();
+      
+      // Limita o número de produtos se maxItems foi definido
+      const limitedProducts = maxItems ? data.slice(0, maxItems) : data;
+      setProducts(limitedProducts);
+    } catch (err: any) {
       console.error('Erro ao carregar produtos:', err);
-      setError('Erro ao carregar produtos. Tente novamente mais tarde.');
-      // Produtos de exemplo em caso de erro
-      setProducts([
-        {
-          id: 1,
-          name: 'Vinho Tinto Premium Reserva Especial 750ml',
-          price: 89.99,
-          originalPrice: 119.99,
-          discount: 25,
-          image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400',
-          description: 'Vinho tinto encorpado com notas de frutas vermelhas'
-        },
-        {
-          id: 2,
-          name: 'Alcatra Bovina Premium Kg',
-          price: 45.90,
-          image: 'https://images.unsplash.com/photo-1588347818036-8e89ed7b22b0?w=400',
-          description: 'Carne bovina de primeira qualidade, macia e suculenta'
-        },
-        {
-          id: 3,
-          name: 'Vinho Branco Seco 750ml',
-          price: 62.50,
-          originalPrice: 75.90,
-          discount: 18,
-          image: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=400',
-          description: 'Vinho branco suave com aroma frutado'
-        },
-        {
-          id: 4,
-          name: 'Picanha Especial Kg',
-          price: 79.90,
-          image: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=400',
-          description: 'Picanha nobre, perfeita para churrasco'
-        },
-        {
-          id: 5,
-          name: 'Espumante Rosé 750ml',
-          price: 95.90,
-          image: 'https://images.unsplash.com/photo-1547595628-c61a29f496f0?w=400',
-          description: 'Espumante rosé para ocasiões especiais'
-        }
-      ]);
+      setError(err.message || 'Erro ao carregar produtos');
     } finally {
       setLoading(false);
     }
   };
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
-  const startIndex = currentPage * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = products.slice(startIndex, endIndex);
+  const handleAddToCart = async (productId: number) => {
+    if (!isAuthenticated) {
+      alert('Você precisa estar logado para adicionar ao carrinho');
+      return;
+    }
 
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
+    try {
+      await api.addToCart(productId, 1);
+      alert('Produto adicionado ao carrinho!');
+    } catch (err: any) {
+      alert('Erro ao adicionar: ' + err.message);
     }
   };
 
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
+  const scrollLeft = () => {
+    const container = document.getElementById(`product-list-${title}`);
+    if (container) {
+      container.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    const container = document.getElementById(`product-list-${title}`);
+    if (container) {
+      container.scrollBy({ left: 300, behavior: 'smooth' });
     }
   };
 
   if (loading) {
     return (
-      <div className="py-12">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">{title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-gray-200 animate-pulse rounded-lg h-96"></div>
-            ))}
-          </div>
+      <section className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-6 text-foreground">{title}</h2>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Carregando produtos...</p>
         </div>
-      </div>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-600">{error}</p>
-            <Button onClick={loadProducts} className="mt-4">
-              Tentar novamente
-            </Button>
-          </div>
+      <section className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-6 text-foreground">{title}</h2>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={loadProducts} variant="outline">
+            Tentar novamente
+          </Button>
         </div>
-      </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <section className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-6 text-foreground">{title}</h2>
+        <div className="text-center py-12 bg-muted/30 rounded-lg">
+          <p className="text-muted-foreground">Nenhum produto disponível no momento.</p>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="py-12 bg-gray-50">
-      <div className="container mx-auto px-4">
-        {/* Header com navegação */}
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">{title}</h2>
-          
-          {showNavigation && totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={prevPage}
-                disabled={currentPage === 0}
-                className="rounded-full"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <span className="text-sm text-gray-600 mx-2">
-                {currentPage + 1} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={nextPage}
-                disabled={currentPage === totalPages - 1}
-                className="rounded-full"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Grid de produtos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {currentProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        {/* Mensagem se não houver produtos */}
-        {products.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">Nenhum produto disponível no momento.</p>
+    <section className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+        {showNavigation && products.length > 4 && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={scrollLeft}
+              className="rounded-full"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={scrollRight}
+              className="rounded-full"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         )}
       </div>
-    </div>
+
+      {/* Products Grid/Carousel */}
+      <div
+        id={`product-list-${title}`}
+        className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {products.map((product) => (
+          <div key={product.id} className="flex-none w-64">
+            <ProductCard 
+              product={product}
+              onAddToCart={() => handleAddToCart(product.id)}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
   );
-}
+};
+
+export default ProductList;
