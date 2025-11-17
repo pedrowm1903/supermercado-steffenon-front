@@ -19,9 +19,6 @@ const Navigation = () => {
     "Departamentos",
     "Mais Vendidos", 
     "Ofertas",
-    "Combos",
-    "Receitas",
-    "Nossas Lojas",
     "Fale Conosco"
   ];
 
